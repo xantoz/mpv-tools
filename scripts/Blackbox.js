@@ -719,16 +719,30 @@ Blackbox.prototype.navigateDir = function(path, selectEntry, forceRefresh)
                 if (ignorePaths && ignorePaths[dir])
                     continue; // Hide (skip) this directory.
                 dir += '/'; // Append slash to signify that it is a directory.
-                menuOptions.push(dir);
+                dirs.push(dir);
                 if (selectEntry === dir)
-                    initialSelectionIdx = menuOptions.length - 1;
+                    initialSelectionIdx = dirs.length - 1;
             }
             for (i = 0; i < dirContents.files.length; ++i) {
                 file = dirContents.files[i];
-                menuOptions.push(file);
+                files.push(file);
                 if (selectEntry === file)
-                    initialSelectionIdx = menuOptions.length - 1;
+                    initialSelectionIdx = dirs.length + files.length - 1;
             }
+
+            var sortKey = function(str) {
+                // TODO: add configurable for this regex
+                return str.replace(/^\[.*?\]/, "");
+            };
+
+            var cmpFn = function (a,b) {
+                return sortKey(a).localeCompare(sortKey(b));
+            };
+
+            dirs.sort(cmpFn);
+            files.sort(cmpFn);
+
+            menuOptions = dirs.concat(files);
 
             var helpPrefix = '';
             if (this.showHelpHint && this.currentPath === null) { // 1st browse.
