@@ -859,7 +859,8 @@ Blackbox.prototype.switchMenu = function(forcePage)
         'keys_menu_open': '{enter}',
         'keys_menu_undo': '{bs}',
         'keys_menu_help': '{h}',
-        'keys_menu_close': '{esc}'
+        'keys_menu_close': '{esc}',
+        'keys_menu_search': '{/}'
     });
 
     // Create and initialize the media browser instance.
@@ -882,7 +883,8 @@ Blackbox.prototype.switchMenu = function(forcePage)
                 'Menu-Open': userConfig.getMultiValue('keys_menu_open'),
                 'Menu-Undo': userConfig.getMultiValue('keys_menu_undo'),
                 'Menu-Help': userConfig.getMultiValue('keys_menu_help'),
-                'Menu-Close': userConfig.getMultiValue('keys_menu_close')
+                'Menu-Close': userConfig.getMultiValue('keys_menu_close'),
+                'Menu-Search': userConfig.getMultiValue('keys_menu_search')
             }
         });
     } catch (e) {

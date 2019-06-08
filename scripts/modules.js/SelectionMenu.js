@@ -62,7 +62,8 @@ var SelectionMenu = function(settings)
         'Menu-Open':{repeatable:false, keys:['enter']},
         'Menu-Undo':{repeatable:false, keys:['bs']},
         'Menu-Help':{repeatable:false, keys:['h']},
-        'Menu-Close':{repeatable:false, keys:['esc']}
+        'Menu-Close':{repeatable:false, keys:['esc']},
+        'Menu-Search':{repeatable:false, keys:['/']}
     };
 
     // Apply custom rebinding overrides if provided.
@@ -321,6 +322,14 @@ SelectionMenu.prototype._menuAction = function(action)
         break;
     case 'Menu-Close':
         this.hideMenu();
+        break;
+    case 'Menu-Search':
+        // TODO:
+        // 1) pre--req: add another variable, a copy of options (activeOptions?), that we can manipulate during search mode. should also include index into real options, so we can map the index into options so we can change selection
+        // 2) enter search mode here: rebind all letters and numbers (eventually: even more). only protected keys are the ones for Menu UDLR, close and undo.
+        //    (implement above as unregister menu keys, register search mode keys
+        // 3) menu close should exit search mode. optionally undo should be able to cancel input. (implement as deregister search keys, register menu keys)
+        // 4) exiting search mode will set activeOptions = options, so we again see all menu entries. selection might have changed though
         break;
     default:
         mp.msg.error('Unknown menu action "'+action+'"');
