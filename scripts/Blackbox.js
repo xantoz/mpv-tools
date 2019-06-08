@@ -79,6 +79,15 @@ var Blackbox = function(options)
         }
     }
 
+    this.sortIgnoreRgx = options.sortIgnoreRegex ? Utils.trim(options.sortIgnoreRegex) : null;
+    if (this.sortIgnoreRgx) {
+        try {
+            this.sortIgnoreRgx = new RegExp(this.sortIgnoreRgx);
+        } catch (e) {
+            throw 'User\'s sort ignore-regex: "'+e.message.replace('regular expression: ', '')+'"';
+        }
+    }
+
     // Active file browser path.
     this.currentPath = null;
 
@@ -705,30 +714,35 @@ Blackbox.prototype.navigateDir = function(path, selectEntry, forceRefresh)
         // changed, we don't waste time reindexing since it's already loaded,
         // and the user's last selection is already active (no need to restore).
         if (forceRefresh || this.menu.getMetadata().type !== 'files' || this.currentPath !== path) {
-            var i, dir, file,
-                dirContents = new PathIndex(path, { // Throws if bad path.
+            var dirContents = new PathIndex(path, { // Throws if bad path.
                     skipDotfiles: true,
                     fileFilterRgx: this.mediaRgx // Show only media-ext files.
                 }),
                 ignorePaths = this.ignorePaths[path],
-                menuOptions = [],
-                initialSelectionIdx = 0;
+                dirs = dirContents.dirs.filter(function (dir) {
+                    return !(ignorePaths && ignorePaths[dir]);
+                }).map(function (dir) {
+                    return dir + '/';
+                }),
+                files = dirContents.files.slice(0);
 
-            for (i = 0; i < dirContents.dirs.length; ++i) {
-                dir = dirContents.dirs[i];
-                if (ignorePaths && ignorePaths[dir])
-                    continue; // Hide (skip) this directory.
-                dir += '/'; // Append slash to signify that it is a directory.
-                menuOptions.push(dir);
-                if (selectEntry === dir)
-                    initialSelectionIdx = menuOptions.length - 1;
+            if (this.sortIgnoreRgx) {
+                var sortIgnoreRgx = this.sortIgnoreRgx;
+                var cmpFn = function (a,b) {
+                    var sortKey = function(str) {
+                        return str.replace(sortIgnoreRgx, "");
+                    };
+                    return sortKey(a).localeCompare(sortKey(b));
+                };
+
+                dirs.sort(cmpFn);
+                files.sort(cmpFn);
             }
-            for (i = 0; i < dirContents.files.length; ++i) {
-                file = dirContents.files[i];
-                menuOptions.push(file);
-                if (selectEntry === file)
-                    initialSelectionIdx = menuOptions.length - 1;
-            }
+
+            var menuOptions = dirs.concat(files);
+            var initialSelectionIdx = menuOptions.indexOf(selectEntry);
+            if (initialSelectionIdx === -1)
+                initialSelectionIdx = 0;
 
             var helpPrefix = '';
             if (this.showHelpHint && this.currentPath === null) { // 1st browse.
@@ -829,6 +843,10 @@ Blackbox.prototype.switchMenu = function(forcePage)
         // - Lastly, be aware that MuJS (mpv's JavaScript engine) is slow, so
         //   if your regex includes tons of files, the browser may slow down.
         include_regex: '',
+        // (Advanced users) Optional regex for part of file name, usually at the
+        // beginning, that should be ignored when sorting the file list.
+        sort_ignore_regex: '^\\[.*?\\]',
+
         // Keybindings. You can bind any action to multiple keys simultaneously.
         // * (string) Ex: `{up}`, `{up}+{shift+w}` or `{x}+{+}` (binds to "x" and the plus key).
         // - Note that all "shift variants" MUST be specified as "shift+<key>".
@@ -853,6 +871,7 @@ Blackbox.prototype.switchMenu = function(forcePage)
             showHelpHint: userConfig.getValue('help_hint'),
             favoritePaths: userConfig.getMultiValue('favorites'),
             includeRegex: userConfig.getValue('include_regex'),
+            sortIgnoreRegex: userConfig.getValue('sort_ignore_regex'),
             keyRebindings: {
                 'Menu-Up': userConfig.getMultiValue('keys_menu_up'),
                 'Menu-Down': userConfig.getMultiValue('keys_menu_down'),
