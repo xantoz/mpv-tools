@@ -79,6 +79,15 @@ var Blackbox = function(options)
         }
     }
 
+    this.sortIgnoreRgx = options.sortIgnoreRegex ? Utils.trim(options.sortIgnoreRegex) : null;
+    if (this.sortIgnoreRgx) {
+        try {
+            this.sortIgnoreRgx = new RegExp(this.sortIgnoreRgx);
+        } catch (e) {
+            throw 'User\'s sort ignore-regex: "'+e.message.replace('regular expression: ', '')+'"';
+        }
+    }
+
     // Active file browser path.
     this.currentPath = null;
 
@@ -717,16 +726,18 @@ Blackbox.prototype.navigateDir = function(path, selectEntry, forceRefresh)
                 }),
                 files = dirContents.files.slice(0);
 
-            var cmpFn = function (a,b) {
-                var sortKey = function(str) {
-                    // TODO: add configurable for this regex
-                    return str.replace(/^\[.*?\]/, "");
+            if (this.sortIgnoreRgx) {
+                var sortIgnoreRgx = this.sortIgnoreRgx;
+                var cmpFn = function (a,b) {
+                    var sortKey = function(str) {
+                        return str.replace(sortIgnoreRgx, "");
+                    };
+                    return sortKey(a).localeCompare(sortKey(b));
                 };
-                return sortKey(a).localeCompare(sortKey(b));
-            };
 
-            dirs.sort(cmpFn);
-            files.sort(cmpFn);
+                dirs.sort(cmpFn);
+                files.sort(cmpFn);
+            }
 
             var menuOptions = dirs.concat(files);
             var initialSelectionIdx = menuOptions.indexOf(selectEntry);
@@ -832,6 +843,10 @@ Blackbox.prototype.switchMenu = function(forcePage)
         // - Lastly, be aware that MuJS (mpv's JavaScript engine) is slow, so
         //   if your regex includes tons of files, the browser may slow down.
         include_regex: '',
+        // (Advanced users) Optional regex for part of file name, usually at the
+        // beginning, that should be ignored when sorting the file list.
+        sort_ignore_regex: '^\[.*?\]',
+
         // Keybindings. You can bind any action to multiple keys simultaneously.
         // * (string) Ex: `{up}`, `{up}+{shift+w}` or `{x}+{+}` (binds to "x" and the plus key).
         // - Note that all "shift variants" MUST be specified as "shift+<key>".
@@ -857,6 +872,7 @@ Blackbox.prototype.switchMenu = function(forcePage)
             showHelpHint: userConfig.getValue('help_hint'),
             favoritePaths: userConfig.getMultiValue('favorites'),
             includeRegex: userConfig.getValue('include_regex'),
+            sortIgnoreRegex: userConfig.getValue('sort_ignore_regex'),
             keyRebindings: {
                 'Menu-Up': userConfig.getMultiValue('keys_menu_up'),
                 'Menu-Down': userConfig.getMultiValue('keys_menu_down'),
