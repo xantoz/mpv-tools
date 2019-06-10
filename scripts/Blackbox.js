@@ -705,46 +705,33 @@ Blackbox.prototype.navigateDir = function(path, selectEntry, forceRefresh)
         // changed, we don't waste time reindexing since it's already loaded,
         // and the user's last selection is already active (no need to restore).
         if (forceRefresh || this.menu.getMetadata().type !== 'files' || this.currentPath !== path) {
-            var i, dir, file,
-                dirContents = new PathIndex(path, { // Throws if bad path.
+            var dirContents = new PathIndex(path, { // Throws if bad path.
                     skipDotfiles: true,
                     fileFilterRgx: this.mediaRgx // Show only media-ext files.
                 }),
                 ignorePaths = this.ignorePaths[path],
-                dirs = [],
-                files = [],
-                menuOptions = [],
-                initialSelectionIdx = 0;
-
-            for (i = 0; i < dirContents.dirs.length; ++i) {
-                dir = dirContents.dirs[i];
-                if (ignorePaths && ignorePaths[dir])
-                    continue; // Hide (skip) this directory.
-                dir += '/'; // Append slash to signify that it is a directory.
-                dirs.push(dir);
-                if (selectEntry === dir)
-                    initialSelectionIdx = dirs.length - 1;
-            }
-            for (i = 0; i < dirContents.files.length; ++i) {
-                file = dirContents.files[i];
-                files.push(file);
-                if (selectEntry === file)
-                    initialSelectionIdx = dirs.length + files.length - 1;
-            }
-
-            var sortKey = function(str) {
-                // TODO: add configurable for this regex
-                return str.replace(/^\[.*?\]/, "");
-            };
+                dirs = dirContents.dirs.filter(function (dir) {
+                    return !(ignorePaths && ignorePaths[dir]);
+                }).map(function (dir) {
+                    return dir + '/';
+                }),
+                files = dirContents.files.slice(0);
 
             var cmpFn = function (a,b) {
+                var sortKey = function(str) {
+                    // TODO: add configurable for this regex
+                    return str.replace(/^\[.*?\]/, "");
+                };
                 return sortKey(a).localeCompare(sortKey(b));
             };
 
             dirs.sort(cmpFn);
             files.sort(cmpFn);
 
-            menuOptions = dirs.concat(files);
+            var menuOptions = dirs.concat(files);
+            var initialSelectionIdx = menuOptions.indexOf(selectEntry);
+            if (initialSelectionIdx === -1)
+                initialSelectionIdx = 0;
 
             var helpPrefix = '';
             if (this.showHelpHint && this.currentPath === null) { // 1st browse.
