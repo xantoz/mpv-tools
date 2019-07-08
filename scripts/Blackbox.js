@@ -845,7 +845,7 @@ Blackbox.prototype.switchMenu = function(forcePage)
         include_regex: '',
         // (Advanced users) Optional regex for part of file name, usually at the
         // beginning, that should be ignored when sorting the file list.
-        sort_ignore_regex: '^\\[.*?\\]',
+        sort_ignore_regex: '^\\[.*?\\]\\s*',
 
         // Keybindings. You can bind any action to multiple keys simultaneously.
         // * (string) Ex: `{up}`, `{up}+{shift+w}` or `{x}+{+}` (binds to "x" and the plus key).
